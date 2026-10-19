@@ -17,6 +17,24 @@ test('library search filters articles and opens one', async ({ page }) => {
   await expect(page.locator('text=/pending/i').first()).toBeVisible();
 });
 
+test('mobile article shows the content before the sidebar and does not overflow', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/learn/digital-eye-strain');
+
+  const titleBox = await page.locator('article h1').boundingBox();
+  const asideBox = await page.locator('.article-aside').boundingBox();
+  expect(titleBox).not.toBeNull();
+  expect(asideBox).not.toBeNull();
+  expect(titleBox!.y).toBeLessThan(asideBox!.y);
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(1);
+});
+
 test('unknown article returns the 404 page', async ({ page }) => {
   const response = await page.goto('/learn/not-a-real-article');
   expect(response?.status()).toBe(404);
