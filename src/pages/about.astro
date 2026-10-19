@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StatusPill from '../components/StatusPill.astro';
+import { t } from '../i18n/ui';
+import { getRuntimeAIMode } from '../lib/ai/config';
+import { registryMeta } from '../lib/sources/registry';
+
+const lang = Astro.locals.lang;
+const runtime = getRuntimeAIMode();
+---
+
+<BaseLayout
+  title={`${t(lang, 'about.title')} — AskOptsam`}
+  description={t(lang, 'about.sub')}
+  lang={lang}
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">AskOptsam</p>
+      <h1>{t(lang, 'about.title')}</h1>
+      <p class="lede">{t(lang, 'about.sub')}</p>
+    </header>
+
+    <div class="feature-grid">
+      <section class="card panel">
+        <h2>{t(lang, 'about.missionTitle')}</h2>
+        <p>{t(lang, 'about.missionBody')}</p>
+      </section>
+      <section class="card panel panel--mint">
+        <h2>{t(lang, 'about.whatTitle')}</h2>
+        <p>{t(lang, 'about.whatBody')}</p>
+        <p class="cluster"><StatusPill lang={lang} mode={runtime.mode} /></p>
+      </section>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="feature-grid">
+      <section class="card panel">
+        <h2>{t(lang, 'about.howTitle')}</h2>
+        <p>{t(lang, 'about.howBody')}</p>
+      </section>
+      <section class="card panel">
+        <h2>{t(lang, 'about.limitsTitle')}</h2>
+        <p>{t(lang, 'about.limitsBody')}</p>
+      </section>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="feature-grid">
+      <section class="card panel">
+        <h2>{t(lang, 'about.orgTitle')}</h2>
+        <p>{t(lang, 'about.orgBody')}</p>
+      </section>
+      <section class="card panel">
+        <h2>{t(lang, 'about.contactTitle')}</h2>
+        <p>{t(lang, 'about.contactPending')}</p>
+      </section>
+    </div>
+
+    <hr class="divider" />
+
+    <section class="card panel panel--dark">
+      <p class="eyebrow">{t(lang, 'sources.title')}</p>
+      <h2>{t(lang, 'about.sourcesTitle')}</h2>
+      <p>{t(lang, 'about.sourcesBody')}</p>
+      <p class="small">
+        {t(lang, 'sources.count', { count: registryMeta.sourceCount })} ·{' '}
+        {t(lang, 'learn.lastVerified', { date: registryMeta.lastFullReview })}
+      </p>
+      <div class="cluster">
+        <a class="button button--secondary" href="/sources">{t(lang, 'footer.sources')}</a>
+        <a class="button button--ghost" href="/status">{t(lang, 'footer.status')}</a>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

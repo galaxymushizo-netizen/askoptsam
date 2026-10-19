@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /account
+Disallow: /history
+Disallow: /signin
+Disallow: /signup
+
+# Private health conversations are never intended for indexing.

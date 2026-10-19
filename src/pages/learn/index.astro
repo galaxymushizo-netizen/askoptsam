@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LearnExplorer from '../../components/LearnExplorer';
+import type { LearnArticleSummary } from '../../components/LearnExplorer';
+import { t } from '../../i18n/ui';
+import { articles, articleTopics } from '../../data/articles';
+
+const lang = Astro.locals.lang;
+const summaries: LearnArticleSummary[] = articles.map((article) => ({
+  slug: article.slug,
+  topic: article.topic,
+  topicLabel: articleTopics[article.topic][lang],
+  title: article.title[lang],
+  summary: article.summary[lang],
+  readingMinutes: article.readingMinutes,
+  clinicalReview: article.clinicalReview,
+  keywords: article.keywords[lang],
+}));
+---
+
+<BaseLayout
+  title={`${t(lang, 'learn.title')} — AskOptsam`}
+  description={t(lang, 'learn.sub')}
+  lang={lang}
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">AskOptsam</p>
+      <h1>{t(lang, 'learn.title')}</h1>
+      <p class="lede">{t(lang, 'learn.sub')}</p>
+    </header>
+
+    <LearnExplorer client:load lang={lang} articles={summaries} />
+
+    <div class="notice notice--demo" role="note">
+      {t(lang, 'learn.articleDisclaimer')} {t(lang, 'learn.clinicalPending')}.
+    </div>
+  </div>
+</BaseLayout>

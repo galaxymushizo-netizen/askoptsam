@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { t } from '../i18n/ui';
+import type { UIKey } from '../i18n/ui';
+
+const lang = Astro.locals.lang;
+const signs: UIKey[] = [
+  'warningSigns.list1',
+  'warningSigns.list2',
+  'warningSigns.list3',
+  'warningSigns.list4',
+  'warningSigns.list5',
+  'warningSigns.list6',
+  'warningSigns.list7',
+  'warningSigns.list8',
+];
+const actions: UIKey[] = [
+  'warningSigns.do1',
+  'warningSigns.do2',
+  'warningSigns.do3',
+  'warningSigns.do4',
+  'warningSigns.do5',
+];
+---
+
+<BaseLayout
+  title={`${t(lang, 'emergencyPage.title')} — AskOptsam`}
+  description={t(lang, 'emergencyPage.sub')}
+  lang={lang}
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">{t(lang, 'chat.safetyFirst')}</p>
+      <h1>{t(lang, 'emergencyPage.title')}</h1>
+      <p class="lede">{t(lang, 'emergencyPage.sub')}</p>
+    </header>
+
+    <div class="emergency-band">
+      <div class="emergency-band-inner">
+        <div>
+          <h2>{t(lang, 'emergencyPage.listTitle')}</h2>
+          <ul>
+            {signs.map((key) => (
+              <li>{t(lang, key)}</li>
+            ))}
+          </ul>
+        </div>
+        <a class="button button--secondary" href="/chat">
+          {t(lang, 'home.askCta')}
+        </a>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="feature-grid">
+      <section class="card panel">
+        <h2>{t(lang, 'emergencyPage.doTitle')}</h2>
+        <ol>
+          {actions.map((key) => (
+            <li>{t(lang, key)}</li>
+          ))}
+        </ol>
+        <p class="triage-service">{t(lang, 'emergencyPage.callNote')}</p>
+      </section>
+
+      <section class="card panel panel--mint">
+        <h2>{t(lang, 'footer.emergencyTitle')}</h2>
+        <p>{t(lang, 'chat.emergencyAiNote')}</p>
+        <p>{t(lang, 'emergencyPage.disclaimer')}</p>
+        <p>{t(lang, 'footer.emergency')}</p>
+        <div class="cluster">
+          <a class="button button--primary" href="/learn">{t(lang, 'home.learnCta')}</a>
+          <a class="button button--ghost" href="/sources">{t(lang, 'footer.sources')}</a>
+        </div>
+      </section>
+    </div>
+  </div>
+</BaseLayout>

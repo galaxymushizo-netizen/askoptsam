@@ -1,0 +1,76 @@
+---
+import BrandMark from './BrandMark.astro';
+import { t } from '../i18n/ui';
+import { languages } from '../i18n/config';
+import type { Lang } from '../i18n/config';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const path = Astro.url.pathname;
+const next = encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`);
+const signedIn = Boolean(Astro.locals.user);
+
+const links = [
+  { href: '/learn', label: t(lang, 'nav.learn') },
+  { href: '/warning-signs', label: t(lang, 'nav.emergency') },
+  { href: '/about', label: t(lang, 'nav.about') },
+];
+
+const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label={t(lang, 'nav.home')}>
+      <span class="brand-mark"><BrandMark /></span>
+      <span class="brand-copy">
+        <span class="brand-name">AskOptsam</span>
+        <span class="brand-sub">{t(lang, 'brand.association')}</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label={lang === 'sw' ? 'Urambazaji mkuu' : 'Main navigation'}>
+      {links.map((link) => (
+        <a href={link.href} aria-current={isActive(link.href) ? 'page' : undefined}>
+          {link.label}
+        </a>
+      ))}
+    </nav>
+
+    <div class="header-actions">
+      <div class="lang-switch" aria-label={t(lang, 'nav.language')}>
+        {Object.entries(languages).map(([code, language]) => (
+          <a
+            href={`/api/lang?lang=${code}&next=${next}`}
+            aria-current={lang === code ? 'true' : undefined}
+            lang={language.htmlLang}
+            hreflang={language.htmlLang}
+          >
+            {language.short}
+          </a>
+        ))}
+      </div>
+      <a class="button button--ghost" href={signedIn ? '/account' : '/signin'}>
+        {signedIn ? t(lang, 'nav.account') : t(lang, 'nav.signin')}
+      </a>
+      <a class="button button--primary" href="/chat">{t(lang, 'nav.startChat')}</a>
+
+      <details class="mobile-menu">
+        <summary aria-label={t(lang, 'nav.menu')}>{t(lang, 'nav.menu')}</summary>
+        <div class="mobile-menu-panel">
+          {links.map((link) => (
+            <a href={link.href}>{link.label}</a>
+          ))}
+          <a href="/sources">{t(lang, 'footer.sources')}</a>
+          <a href={signedIn ? '/account' : '/signin'}>
+            {signedIn ? t(lang, 'nav.account') : t(lang, 'nav.signin')}
+          </a>
+          <a href="/status">{t(lang, 'nav.status')}</a>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>

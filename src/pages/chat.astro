@@ -1,0 +1,250 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ChatIsland from '../components/chat/ChatIsland';
+import StatusPill from '../components/StatusPill.astro';
+import { t } from '../i18n/ui';
+import { suggestedForLang } from '../data/questions';
+import { articles } from '../data/articles';
+import { demoReasonText, getRuntimeAIMode } from '../lib/ai/config';
+import { UUID_RE } from '../lib/http/api';
+import {
+  createRequestSupabase,
+  isSupabaseConfigured,
+} from '../lib/supabase/server';
+import type {
+  ChatMessage,
+  ChatSource,
+  ChatTriage,
+  ChatMode,
+} from '../components/chat/types';
+
+export const prerender = false;
+
+const lang = Astro.locals.lang;
+const user = Astro.locals.user;
+const runtime = getRuntimeAIMode();
+const modeDetail = demoReasonText(runtime.demoReason, lang);
+const accountsConfigured = isSupabaseConfigured();
+
+function toSource(value: unknown): ChatSource | null {
+  if (!value || typeof value !== 'object') return null;
+  const source = value as Record<string, unknown>;
+  if (
+    typeof source.id !== 'string' ||
+    typeof source.title !== 'string' ||
+    typeof source.publisher !== 'string' ||
+    typeof source.url !== 'string' ||
+    !/^https?:\/\//.test(source.url)
+  ) {
+    return null;
+  }
+  return {
+    id: source.id,
+    title: source.title,
+    publisher: source.publisher,
+    url: source.url,
+  };
+}
+
+function toSources(value: unknown): ChatSource[] {
+  return Array.isArray(value)
+    ? value.map(toSource).filter((source): source is ChatSource => Boolean(source))
+    : [];
+}
+
+function toNumberArray(value: unknown): number[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is number => Number.isInteger(entry) && Number(entry) > 0)
+    : [];
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+}
+
+function toTriage(value: unknown): ChatTriage | null {
+  if (!value || typeof value !== 'object') return null;
+  const triage = value as Record<string, unknown>;
+  if (typeof triage.title !== 'string' || typeof triage.summary !== 'string') return null;
+  return {
+    severity: triage.severity === 'emergency' ? 'emergency' : 'urgent',
+    category: typeof triage.category === 'string' ? triage.category : 'urgent',
+    title: triage.title,
+    label: typeof triage.label === 'string' ? triage.label : '',
+    summary: triage.summary,
+    steps: toStringArray(triage.steps),
+    doNot: toStringArray(triage.doNot),
+    seekCare: typeof triage.seekCare === 'string' ? triage.seekCare : '',
+    serviceNote: typeof triage.serviceNote === 'string' ? triage.serviceNote : '',
+    sources: toSources(triage.sources),
+  };
+}
+
+function toMessage(row: Record<string, unknown>): ChatMessage | null {
+  const role = row.role === 'user' || row.role === 'assistant' ? row.role : null;
+  if (!role || typeof row.content !== 'string' || typeof row.id !== 'string') return null;
+  const metadata =
+    row.metadata && typeof row.metadata === 'object'
+      ? (row.metadata as Record<string, unknown>)
+      : {};
+  const mode: ChatMode | undefined =
+    metadata.mode === 'live' || metadata.mode === 'demo' || metadata.mode === 'safety'
+      ? metadata.mode
+      : undefined;
+  return {
+    id: row.id,
+    role,
+    content: row.content,
+    createdAt: typeof row.created_at === 'string' ? row.created_at : undefined,
+    mode,
+    providerLabel:
+      typeof metadata.providerLabel === 'string' ? metadata.providerLabel : undefined,
+    sources: toSources(metadata.sources),
+    usedSourceIndexes: toNumberArray(metadata.usedSourceIndexes),
+    followUps: toStringArray(metadata.followUps),
+    triage: role === 'assistant' ? toTriage(metadata.triage) : null,
+    cautionApplied: metadata.cautionApplied === true,
+    truncated: metadata.truncated === true,
+  };
+}
+
+const question = (Astro.url.searchParams.get('q') || '').trim().slice(0, 2000);
+const conversationParam = Astro.url.searchParams.get('conversation');
+
+let initialMessages: ChatMessage[] = [];
+let initialConversationId: string | null = null;
+let loadError: string | null = null;
+let savingDefault = false;
+
+if (user && accountsConfigured) {
+  const supabase = createRequestSupabase(Astro);
+  if (supabase) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('save_history_default')
+      .eq('id', user.id)
+      .maybeSingle();
+    savingDefault = Boolean(profile?.save_history_default);
+  }
+}
+
+if (conversationParam) {
+  if (!UUID_RE.test(conversationParam)) {
+    loadError = 'invalid';
+  } else if (!user) {
+    return Astro.redirect(
+      `/signin?next=${encodeURIComponent(`${Astro.url.pathname}${Astro.url.search}`)}`,
+    );
+  } else {
+    const supabase = createRequestSupabase(Astro);
+    if (!supabase) {
+      loadError = 'unavailable';
+    } else {
+      const { data: conversation, error } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('id', conversationParam)
+        .maybeSingle();
+      if (error || !conversation) {
+        loadError = 'not_found';
+      } else {
+        const { data: rows, error: messageError } = await supabase
+          .from('messages')
+          .select('id,role,content,metadata,created_at')
+          .eq('conversation_id', conversationParam)
+          .order('created_at', { ascending: true });
+        if (messageError) {
+          loadError = 'messages';
+        } else {
+          initialConversationId = conversation.id as string;
+          initialMessages = (rows ?? [])
+            .map((row) => toMessage(row as Record<string, unknown>))
+            .filter((message): message is ChatMessage => Boolean(message));
+        }
+      }
+    }
+  }
+}
+
+const asideArticles = articles.slice(0, 3);
+---
+
+<BaseLayout
+  title={`${t(lang, 'chat.title')} — AskOptsam`}
+  description={t(lang, 'chat.subtitle')}
+  lang={lang}
+  noindex
+  mainClass="chat-page"
+>
+  <div class="container chat-layout">
+    <aside class="chat-aside">
+      <div class="aside-card">
+        <h2>{runtime.mode === 'live' ? t(lang, 'chat.modeLive') : t(lang, 'chat.modeDemo')}</h2>
+        <p class="cluster"><StatusPill lang={lang} mode={runtime.mode} /></p>
+        <p>
+          {runtime.mode === 'live'
+            ? `${runtime.providerLabel}${runtime.model ? ` · ${runtime.model}` : ''}`
+            : t(lang, 'chat.modeDemoExplain')}
+        </p>
+        {runtime.mode === 'demo' && modeDetail && <p class="tiny muted">{modeDetail}</p>}
+        <p class="tiny">
+          <a href="/status">{t(lang, 'chat.statusLink')}</a>
+        </p>
+      </div>
+
+      <div class="aside-card">
+        <h2>{t(lang, 'chat.safetyFirst')}</h2>
+        <p>{t(lang, 'footer.emergency')}</p>
+        <p>
+          <a href="/warning-signs">{t(lang, 'nav.emergency')} →</a>
+        </p>
+      </div>
+
+      <div class="aside-card">
+        <h2>{t(lang, 'chat.relatedReading')}</h2>
+        <ul class="aside-links">
+          {asideArticles.map((article) => (
+            <li>
+              <a href={`/learn/${article.slug}`}>
+                <span>{article.title[lang]}</span>
+                <span aria-hidden="true">→</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="aside-card">
+        <h2>{t(lang, 'chat.privacyLink')}</h2>
+        <p>{t(lang, 'chat.tempNotice')}</p>
+        <ul class="aside-links">
+          <li>
+            <a href="/privacy">{t(lang, 'footer.privacy')}</a>
+          </li>
+          <li>
+            <a href="/medical-disclaimer">{t(lang, 'footer.medical')}</a>
+          </li>
+        </ul>
+      </div>
+    </aside>
+
+    <ChatIsland
+      client:load
+      lang={lang}
+      initialMode={runtime.mode}
+      initialModeDetail={modeDetail}
+      providerLabel={runtime.providerLabel}
+      signedIn={Boolean(user)}
+      userEmail={user?.email ?? null}
+      accountsConfigured={accountsConfigured}
+      initialQuestion={question}
+      initialMessages={initialMessages}
+      initialConversationId={initialConversationId}
+      initialSaving={Boolean(user) && savingDefault}
+      suggested={suggestedForLang(lang)}
+      loadError={loadError}
+    />
+  </div>
+</BaseLayout>

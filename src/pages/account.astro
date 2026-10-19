@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AccountPanel from '../components/AccountPanel';
+import { t } from '../i18n/ui';
+import type { Lang } from '../i18n/config';
+import {
+  createRequestSupabase,
+  isSupabaseConfigured,
+} from '../lib/supabase/server';
+
+export const prerender = false;
+
+const lang = Astro.locals.lang;
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect(`/signin?next=${encodeURIComponent('/account')}`);
+}
+
+let preferredLang: Lang = lang;
+let saveHistoryDefault = false;
+let deletionAvailable = Boolean((process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim());
+
+if (isSupabaseConfigured()) {
+  const supabase = createRequestSupabase(Astro);
+  if (supabase) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('preferred_lang, save_history_default')
+      .eq('id', user.id)
+      .maybeSingle();
+    preferredLang = data?.preferred_lang === 'sw' ? 'sw' : 'en';
+    saveHistoryDefault = Boolean(data?.save_history_default);
+  }
+} else {
+  deletionAvailable = false;
+}
+---
+
+<BaseLayout
+  title={`${t(lang, 'account.title')} — AskOptsam`}
+  description={t(lang, 'account.sub')}
+  lang={lang}
+  noindex
+  mainClass="page"
+>
+  <div class="container container--narrow">
+    <header class="page-head">
+      <p class="eyebrow">{t(lang, 'auth.signedInAs', { email: user.email ?? '' })}</p>
+      <h1>{t(lang, 'account.title')}</h1>
+      <p class="lede">{t(lang, 'account.sub')}</p>
+    </header>
+
+    <AccountPanel
+      client:load
+      lang={lang}
+      email={user.email ?? ''}
+      preferredLang={preferredLang}
+      saveHistoryDefault={saveHistoryDefault}
+      deletionAvailable={deletionAvailable}
+    />
+  </div>
+</BaseLayout>

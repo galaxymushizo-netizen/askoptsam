@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/ui';
+import { articleTopics, getArticle, type Article } from '../../data/articles';
+import { getSources, registryMeta } from '../../lib/sources/registry';
+
+export const prerender = false;
+
+const lang = Astro.locals.lang;
+const slug = Astro.params.slug ?? '';
+const article = getArticle(slug);
+
+if (!article) {
+  Astro.response.status = 404;
+}
+
+const title = article ? `${article.title[lang]} — AskOptsam` : t(lang, 'error.404Title');
+const description = article ? article.summary[lang] : t(lang, 'error.404Body');
+const sources = article ? getSources(article.sourceIds) : [];
+const related = article
+  ? article.related
+      .map((relatedSlug) => getArticle(relatedSlug))
+      .filter((entry): entry is Article => Boolean(entry))
+  : [];
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  try {
+    return new Intl.DateTimeFormat(lang === 'sw' ? 'sw-TZ' : 'en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
+  } catch {
+    return value;
+  }
+}
+---
+
+<BaseLayout title={title} description={description} lang={lang} mainClass="page">
+  <div class="container">
+    {article ? (
+      <>
+        <nav aria-label={t(lang, 'learn.back')}>
+          <ol class="breadcrumb">
+            <li><a href="/">{t(lang, 'error.home')}</a></li>
+            <li><a href="/learn">{t(lang, 'learn.title')}</a></li>
+            <li>{articleTopics[article.topic][lang]}</li>
+          </ol>
+        </nav>
+
+        <div class="article-page">
+          <article class="article-main">
+            <header class="page-head">
+              <span class="topic-tag">{articleTopics[article.topic][lang]}</span>
+              <h1>{article.title[lang]}</h1>
+              <p class="article-summary">{article.summary[lang]}</p>
+              <div class="article-meta">
+                <span>{t(lang, 'learn.readingTime', { count: article.readingMinutes })}</span>
+                <span>{t(lang, 'learn.reviewed', { date: formatDate(article.reviewedAt) })}</span>
+                <span>
+                  {article.clinicalReview === 'pending'
+                    ? t(lang, 'learn.clinicalPending')
+                    : t(lang, 'common.reviewed')}
+                </span>
+              </div>
+            </header>
+
+            {article.warning && (
+              <div class="warning-card" role="note">
+                <strong>{t(lang, 'learn.warning')}</strong>
+                {article.warning[lang]}
+              </div>
+            )}
+
+            <div class="prose">
+              {article.sections.map((section) => (
+                <section>
+                  <h2>{section.heading[lang]}</h2>
+                  {section.body[lang].map((paragraph) => (
+                    <p>{paragraph}</p>
+                  ))}
+                </section>
+              ))}
+
+              <div class="notice notice--demo" role="note">
+                {t(lang, 'learn.articleDisclaimer')}
+              </div>
+            </div>
+
+            <section class="article-sources" aria-labelledby="article-sources-title">
+              <h2 id="article-sources-title">{t(lang, 'learn.sources')}</h2>
+              <p class="small muted">
+                {t(lang, 'learn.lastVerified', { date: registryMeta.lastFullReview })}
+              </p>
+              <ul>
+                {sources.map((source) => (
+                  <li>
+                    <a href={source.url} target="_blank" rel="noopener noreferrer">
+                      {source.title}
+                    </a>{' '}
+                    — {source.publisher}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </article>
+
+          <aside class="article-aside">
+            <div class="card panel">
+              <h2>{t(lang, 'learn.warning')}</h2>
+              <p>{t(lang, 'footer.emergency')}</p>
+              <a class="button button--danger button--wide" href="/warning-signs">
+                {t(lang, 'home.emergencyLink')}
+              </a>
+            </div>
+
+            <div class="card panel panel--mint">
+              <h2>{t(lang, 'chat.startTitle')}</h2>
+              <p>{t(lang, 'chat.startBody')}</p>
+              <a class="button button--primary button--wide" href="/chat">
+                {t(lang, 'home.askCta')}
+              </a>
+            </div>
+
+            {related.length > 0 && (
+              <div class="card panel">
+                <h2>{t(lang, 'learn.related')}</h2>
+                <ul class="aside-links">
+                  {related.map((entry) => (
+                    <li>
+                      <a href={`/learn/${entry.slug}`}>
+                        <span>{entry.title[lang]}</span>
+                        <span aria-hidden="true">→</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </aside>
+        </div>
+      </>
+    ) : (
+      <div class="empty-state">
+        <h1>{t(lang, 'error.404Title')}</h1>
+        <p>{t(lang, 'error.404Body')}</p>
+        <a class="button button--primary" href="/learn">
+          {t(lang, 'learn.back')}
+        </a>
+      </div>
+    )}
+  </div>
+</BaseLayout>

@@ -1,0 +1,38 @@
+{
+  "name": "askoptsam",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AskOptsam — bilingual AI eye-health information platform by Optsam Eye Care",
+  "engines": {
+    "node": ">=22.22.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "start": "node ./dist/server/entry.mjs",
+    "check": "astro check",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "npm run build && playwright test",
+    "verify:sources": "node scripts/verify-sources.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.9",
+    "@astrojs/preact": "^6.1.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "astro": "^7.4.0",
+    "preact": "^11.0.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.11",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
+}

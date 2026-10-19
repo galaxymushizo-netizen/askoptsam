@@ -1,0 +1,65 @@
+---
+import { t } from '../i18n/ui';
+import type { Lang } from '../i18n/config';
+import { legalMeta, legalText, type LegalSection } from '../content/legal';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  subtitle: string;
+  sections: LegalSection[];
+  draft?: boolean;
+}
+
+const { lang, title, subtitle, sections, draft = true } = Astro.props;
+---
+
+<div class="page">
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">AskOptsam</p>
+      <h1>{title}</h1>
+      <p class="lede">{subtitle}</p>
+      <p class="small muted">
+        {t(lang, 'legal.lastUpdated', { date: legalMeta.lastUpdated })}
+      </p>
+    </header>
+
+    {draft && (
+      <div class="draft-banner" role="note">
+        {legalText(legalMeta.draftNote, lang)}
+      </div>
+    )}
+
+    <div class="legal-page">
+      <nav class="legal-nav" aria-label={t(lang, 'legal.onThisPage')}>
+        <ul>
+          {sections.map((section) => (
+            <li>
+              <a href={`#${section.id}`}>{legalText(section.heading, lang)}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div class="legal-prose prose">
+        {sections.map((section) => (
+          <section id={section.id}>
+            <h2>{legalText(section.heading, lang)}</h2>
+            {section.blocks.map((block) =>
+              block.type === 'p' && block.text ? (
+                <p>{legalText(block.text, lang)}</p>
+              ) : (
+                <ul>
+                  {(block.items ?? []).map((item) => (
+                    <li>{legalText(item, lang)}</li>
+                  ))}
+                </ul>
+              ),
+            )}
+          </section>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>

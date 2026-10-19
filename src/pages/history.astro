@@ -1,0 +1,78 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HistoryIsland from '../components/HistoryIsland';
+import type { HistoryConversation } from '../components/HistoryIsland';
+import { t } from '../i18n/ui';
+import {
+  createRequestSupabase,
+  isSupabaseConfigured,
+} from '../lib/supabase/server';
+
+export const prerender = false;
+
+const lang = Astro.locals.lang;
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect(`/signin?next=${encodeURIComponent('/history')}`);
+}
+
+let conversations: HistoryConversation[] = [];
+let loadError = false;
+
+if (isSupabaseConfigured()) {
+  const supabase = createRequestSupabase(Astro);
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('conversations')
+      .select('id,title,lang,created_at,updated_at,messages(count)')
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (error) {
+      loadError = true;
+    } else {
+      conversations = (data ?? []).map((row) => {
+        const messages = Array.isArray(row.messages) ? row.messages[0] : null;
+        const count =
+          messages && typeof messages === 'object' && 'count' in messages
+            ? Number((messages as { count?: number }).count ?? 0)
+            : 0;
+        return {
+          id: row.id as string,
+          title: row.title as string,
+          lang: row.lang as string,
+          createdAt: row.created_at as string,
+          updatedAt: row.updated_at as string,
+          messageCount: count,
+        };
+      });
+    }
+  } else {
+    loadError = true;
+  }
+} else {
+  loadError = true;
+}
+---
+
+<BaseLayout
+  title={`${t(lang, 'history.title')} — AskOptsam`}
+  description={t(lang, 'history.sub')}
+  lang={lang}
+  noindex
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">{t(lang, 'account.title')}</p>
+      <h1>{t(lang, 'history.title')}</h1>
+      <p class="lede">{t(lang, 'history.sub')}</p>
+    </header>
+
+    <HistoryIsland
+      client:load
+      lang={lang}
+      initialConversations={conversations}
+      loadError={loadError}
+    />
+  </div>
+</BaseLayout>

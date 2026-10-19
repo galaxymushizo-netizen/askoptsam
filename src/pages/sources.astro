@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { t } from '../i18n/ui';
+import { registryMeta, sources } from '../lib/sources/registry';
+
+const lang = Astro.locals.lang;
+const grouped = new Map<string, typeof sources>();
+for (const source of sources) {
+  const list = grouped.get(source.publisher) ?? [];
+  list.push(source);
+  grouped.set(source.publisher, list);
+}
+---
+
+<BaseLayout
+  title={`${t(lang, 'sources.title')} — AskOptsam`}
+  description={t(lang, 'sources.sub')}
+  lang={lang}
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">AskOptsam</p>
+      <h1>{t(lang, 'sources.title')}</h1>
+      <p class="lede">{t(lang, 'sources.sub')}</p>
+      <p class="small muted">
+        {t(lang, 'sources.count', { count: registryMeta.sourceCount })} ·{' '}
+        {t(lang, 'learn.lastVerified', { date: registryMeta.lastFullReview })}
+      </p>
+    </header>
+
+    <div class="draft-banner" role="note">{t(lang, 'sources.intro')}</div>
+
+    <div class="feature-grid">
+      <section class="card panel">
+        <h2>{t(lang, 'sources.usageTitle')}</h2>
+        <p>{t(lang, 'sources.usageBody')}</p>
+      </section>
+      <section class="card panel panel--mint">
+        <h2>{t(lang, 'learn.clinicalPending')}</h2>
+        <p>{t(lang, 'sources.reviewPending')}</p>
+        <p class="small">{registryMeta.reviewPolicy}</p>
+      </section>
+    </div>
+
+    <hr class="divider" />
+
+    {[...grouped.entries()].map(([publisher, list]) => (
+      <section class="card panel">
+        <h2>{publisher}</h2>
+        {list.map((source) => (
+          <div class="source-registry-item">
+            <h3>
+              <a href={source.url} target="_blank" rel="noopener noreferrer">
+                {source.title}
+              </a>
+            </h3>
+            <p>
+              {t(lang, 'sources.publisher')}: {source.publisher} ·{' '}
+              {t(lang, 'sources.lastChecked', { date: source.lastVerified })}
+            </p>
+            <div class="source-topics">
+              {source.topics.map((topic) => (
+                <span class="topic-mini">{topic}</span>
+              ))}
+            </div>
+            <p class="tiny">
+              <a href={source.url} target="_blank" rel="noopener noreferrer">
+                {t(lang, 'learn.sourceLink')} →
+              </a>
+            </p>
+          </div>
+        ))}
+      </section>
+    ))}
+
+    <p class="small muted">
+      {t(lang, 'sources.reviewPending')} · {t(lang, 'learn.lastVerified', { date: registryMeta.lastFullReview })}
+    </p>
+  </div>
+</BaseLayout>

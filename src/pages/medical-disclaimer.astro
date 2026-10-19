@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LegalPage from '../components/LegalPage.astro';
+import { t } from '../i18n/ui';
+import { medicalSections } from '../content/legal';
+
+const lang = Astro.locals.lang;
+---
+
+<BaseLayout
+  title={`${t(lang, 'legal.medicalTitle')} — AskOptsam`}
+  description={t(lang, 'legal.medicalSub')}
+  lang={lang}
+  mainClass=""
+>
+  <LegalPage
+    lang={lang}
+    title={t(lang, 'legal.medicalTitle')}
+    subtitle={t(lang, 'legal.medicalSub')}
+    sections={medicalSections}
+  />
+</BaseLayout>

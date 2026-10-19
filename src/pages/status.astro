@@ -1,0 +1,119 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StatusPill from '../components/StatusPill.astro';
+import { t } from '../i18n/ui';
+import { getBudgetStatus } from '../lib/ai/budget';
+import { getAIConfig, getRuntimeAIMode } from '../lib/ai/config';
+import { features } from '../config/brand';
+import { registryMeta, sources } from '../lib/sources/registry';
+import { isSupabaseConfigured } from '../lib/supabase/server';
+import { positiveInt } from '../lib/security/rate-limit';
+
+const lang = Astro.locals.lang;
+const runtime = getRuntimeAIMode();
+const config = getAIConfig();
+const budget = getBudgetStatus();
+const accounts = isSupabaseConfigured();
+const imageEnabled = features.imageExplanation;
+const perMinute = positiveInt(process.env.RATE_LIMIT_PER_MINUTE, 6);
+const perDay = positiveInt(process.env.RATE_LIMIT_PER_DAY, 80);
+const privacyReviewedAt = config.privacyReviewedAt;
+---
+
+<BaseLayout
+  title={`${t(lang, 'status.title')} — AskOptsam`}
+  description={t(lang, 'status.sub')}
+  lang={lang}
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">AskOptsam</p>
+      <h1>{t(lang, 'status.title')}</h1>
+      <p class="lede">{t(lang, 'status.sub')}</p>
+      <p class="cluster"><StatusPill lang={lang} mode={runtime.mode} /></p>
+    </header>
+
+    <div class="status-grid">
+      <section class="status-card">
+        <h2>{t(lang, 'status.provider')}</h2>
+        <div class="status-value">
+          {runtime.mode === 'live' ? t(lang, 'status.live') : t(lang, 'status.demo')}
+        </div>
+        <p>
+          {runtime.providerLabel}
+          {runtime.model ? ` · ${runtime.model}` : ''}
+        </p>
+        {runtime.demoReason && <p class="tiny muted">{runtime.demoReason}</p>}
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.accounts')}</h2>
+        <div class="status-value">
+          {accounts ? t(lang, 'status.enabled') : t(lang, 'status.notConfigured')}
+        </div>
+        <p>{accounts ? t(lang, 'status.history') : t(lang, 'status.accountsDisabled')}</p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.image')}</h2>
+        <div class="status-value">
+          {imageEnabled ? t(lang, 'status.enabled') : t(lang, 'status.disabled')}
+        </div>
+        <p>{t(lang, 'status.imageDisabled')}</p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.privacyApproved')}</h2>
+        <div class="status-value">
+          {config.privacyApproved ? t(lang, 'status.enabled') : t(lang, 'status.pending')}
+        </div>
+        <p>{privacyReviewedAt ? `Reviewed: ${privacyReviewedAt}` : t(lang, 'status.pending')}</p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.rateLimits')}</h2>
+        <div class="status-value">{perMinute} / {perDay}</div>
+        <p>{t(lang, 'status.rateLimitsBody', { perMinute, perDay })}</p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.budget')}</h2>
+        <div class="status-value">{budget.dailyUsed} / {budget.dailyLimit}</div>
+        <p>{t(lang, 'status.budgetBody', { daily: budget.dailyLimit, monthly: budget.monthlyLimit })}</p>
+        <p class="tiny muted">
+          {budget.monthlyUsed} / {budget.monthlyLimit} this month
+        </p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.sources')}</h2>
+        <div class="status-value">{sources.length}</div>
+        <p>
+          {t(lang, 'status.sourceBody', {
+            count: registryMeta.sourceCount,
+            date: registryMeta.lastFullReview,
+          })}
+        </p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.clinicalPending')}</h2>
+        <div class="status-value">{t(lang, 'status.pending')}</div>
+        <p>{registryMeta.reviewPolicy}</p>
+      </section>
+
+      <section class="status-card">
+        <h2>{t(lang, 'status.consentRecords')}</h2>
+        <p>{t(lang, 'status.consentBody')}</p>
+      </section>
+    </div>
+
+    <p class="small muted">{t(lang, 'status.noSecrets')}</p>
+
+    <div class="cluster">
+      <a class="button button--primary" href="/chat">{t(lang, 'status.back')}</a>
+      <a class="button button--ghost" href="/sources">{t(lang, 'footer.sources')}</a>
+    </div>
+  </div>
+</BaseLayout>

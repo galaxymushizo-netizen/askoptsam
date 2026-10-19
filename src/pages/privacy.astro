@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LegalPage from '../components/LegalPage.astro';
+import { t } from '../i18n/ui';
+import { privacySections } from '../content/legal';
+
+const lang = Astro.locals.lang;
+---
+
+<BaseLayout
+  title={`${t(lang, 'privacy.title')} — AskOptsam`}
+  description={t(lang, 'privacy.sub')}
+  lang={lang}
+  mainClass=""
+>
+  <LegalPage
+    lang={lang}
+    title={t(lang, 'privacy.title')}
+    subtitle={t(lang, 'privacy.sub')}
+    sections={privacySections}
+  />
+</BaseLayout>

@@ -1,0 +1,196 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StatusPill from '../components/StatusPill.astro';
+import { t } from '../i18n/ui';
+import { articles, articleTopics } from '../data/articles';
+import { suggestedQuestions } from '../data/questions';
+import { getRuntimeAIMode } from '../lib/ai/config';
+import { registryMeta } from '../lib/sources/registry';
+
+const lang = Astro.locals.lang;
+const runtime = getRuntimeAIMode();
+const suggested = suggestedQuestions.slice(0, 4).map((question) => question[lang]);
+const education = articles.slice(0, 3);
+const statusKey =
+  runtime.mode === 'live'
+    ? 'home.statusLive'
+    : runtime.demoReason === 'provider_error'
+      ? 'home.statusUnavailable'
+      : 'home.statusDemo';
+---
+
+<BaseLayout
+  title={t(lang, 'meta.homeTitle')}
+  description={t(lang, 'meta.homeDescription')}
+  lang={lang}
+>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <p class="eyebrow">{t(lang, 'home.eyebrow')}</p>
+        <h1>{t(lang, 'home.heroTitle')}</h1>
+        <p class="lede">{t(lang, 'home.heroSub')}</p>
+        <div class="hero-actions">
+          <a class="button button--primary" href="/chat">{t(lang, 'home.askCta')}</a>
+          <a class="button button--secondary" href="/learn">{t(lang, 'home.learnCta')}</a>
+        </div>
+        <ul class="hero-trust">
+          <li>{t(lang, 'home.trust1')}</li>
+          <li>{t(lang, 'home.trust2')}</li>
+          <li>{t(lang, 'home.trust3')}</li>
+        </ul>
+      </div>
+
+      <div class="hero-quick">
+        <div class="hero-quick-head">
+          <strong>Ask AskOptsam</strong>
+          <StatusPill lang={lang} mode={runtime.mode} />
+        </div>
+        <form class="quick-form" action="/chat" method="get">
+          <label class="visually-hidden" for="home-question">{t(lang, 'home.inputLabel')}</label>
+          <textarea
+            id="home-question"
+            name="q"
+            required
+            minlength="2"
+            maxlength="2000"
+            placeholder={t(lang, 'home.inputPlaceholder')}
+          ></textarea>
+          <button class="button button--primary" type="submit">
+            {t(lang, 'home.askCta')}
+          </button>
+        </form>
+        <p class="hero-quick-note">{t(lang, 'home.heroDisclaimer')}</p>
+        <div class="hero-suggestions">
+          <p>{t(lang, 'home.suggestedTitle')}</p>
+          <div class="chip-row">
+            {suggested.map((question) => (
+              <a class="chip" href={`/chat?q=${encodeURIComponent(question)}`}>
+                {question}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="emergency-band">
+        <div class="emergency-band-inner">
+          <div>
+            <h2>{t(lang, 'home.emergencyTitle')}</h2>
+            <p>{t(lang, 'home.emergencyBody')}</p>
+          </div>
+          <a class="button button--secondary" href="/warning-signs">
+            {t(lang, 'home.emergencyLink')}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="split-heading">
+        <div>
+          <p class="eyebrow">{t(lang, 'home.eyebrow')}</p>
+          <h2>{t(lang, 'home.educationTitle')}</h2>
+        </div>
+        <div>
+          <p>{t(lang, 'home.educationSub')}</p>
+          <a class="button button--ghost" href="/learn">{t(lang, 'home.learnCta')} →</a>
+        </div>
+      </div>
+
+      <div class="article-grid">
+        {education.map((article) => (
+          <article class="article-card">
+            <span class="topic-tag">{articleTopics[article.topic][lang]}</span>
+            <h3>{article.title[lang]}</h3>
+            <p>{article.summary[lang]}</p>
+            <div class="article-card-footer">
+              <span>{t(lang, 'learn.readingTime', { count: article.readingMinutes })}</span>
+              <a href={`/learn/${article.slug}`}>{t(lang, 'common.readArticle')} →</a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="split-heading">
+        <div>
+          <p class="eyebrow">{t(lang, 'chat.safetyFirst')}</p>
+          <h2>{t(lang, 'home.howTitle')}</h2>
+        </div>
+        <p>{t(lang, 'home.howSub')}</p>
+      </div>
+
+      <div class="step-grid">
+        <div class="step-card">
+          <h3>{t(lang, 'home.step1Title')}</h3>
+          <p>{t(lang, 'home.step1Body')}</p>
+        </div>
+        <div class="step-card">
+          <h3>{t(lang, 'home.step2Title')}</h3>
+          <p>{t(lang, 'home.step2Body')}</p>
+        </div>
+        <div class="step-card">
+          <h3>{t(lang, 'home.step3Title')}</h3>
+          <p>{t(lang, 'home.step3Body')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="feature-grid">
+        <div class="card panel">
+          <p class="eyebrow">{t(lang, 'home.limitsTitle')}</p>
+          <p class="muted">{t(lang, 'home.limitsBody')}</p>
+          <ul class="limit-list">
+            <li>{t(lang, 'home.limits1')}</li>
+            <li>{t(lang, 'home.limits2')}</li>
+            <li>{t(lang, 'home.limits3')}</li>
+            <li>{t(lang, 'home.limits4')}</li>
+          </ul>
+        </div>
+
+        <div class="card panel panel--mint">
+          <p class="eyebrow">{t(lang, 'home.statusTitle')}</p>
+          <p class="status-value">
+            <StatusPill lang={lang} mode={runtime.mode} />
+          </p>
+          <p>{t(lang, statusKey)}</p>
+          <h3>{t(lang, 'home.verifiedTitle')}</h3>
+          <p>{t(lang, 'home.verifiedBody')}</p>
+          <div class="cluster">
+            <a class="button button--secondary" href="/status">{t(lang, 'footer.status')}</a>
+            <a class="button button--ghost" href="/sources">
+              {t(lang, 'sources.count', { count: registryMeta.sourceCount })}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight">
+    <div class="container">
+      <div class="card panel panel--dark">
+        <p class="eyebrow">{t(lang, 'sources.title')}</p>
+        <h2>{t(lang, 'home.sourcesTitle')}</h2>
+        <p>{t(lang, 'home.sourcesBody')}</p>
+        <div class="cluster">
+          <a class="button button--secondary" href="/sources">{t(lang, 'footer.sources')}</a>
+          <a class="button button--ghost" href="/about">{t(lang, 'footer.about')}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

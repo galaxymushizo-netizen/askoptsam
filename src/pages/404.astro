@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const lang = Astro.locals.lang;
+const copy =
+  lang === 'sw'
+    ? {
+        title: 'Ukurasa haujapatikana',
+        body: 'Kiungo hiki hakiwezi kupatikana. Unaweza kurudi nyumbani, kuuliza swali, au kuvinjari maktaba ya elimu.',
+        home: 'Rudi nyumbani',
+        chat: 'Uliza swali',
+        learn: 'Maktaba ya elimu',
+      }
+    : {
+        title: 'Page not found',
+        body: 'This link could not be found. You can return home, ask a question, or browse the education library.',
+        home: 'Back home',
+        chat: 'Ask a question',
+        learn: 'Education library',
+      };
+---
+
+<BaseLayout
+  title={`${copy.title} — AskOptsam`}
+  description={copy.body}
+  lang={lang}
+  noindex
+  mainClass="page"
+>
+  <div class="container">
+    <header class="page-head">
+      <p class="eyebrow">404</p>
+      <h1>{copy.title}</h1>
+      <p class="lede">{copy.body}</p>
+    </header>
+
+    <div class="stack">
+      <div class="cluster">
+        <a class="button" href="/">{copy.home}</a>
+        <a class="button button--secondary" href="/chat">{copy.chat}</a>
+        <a class="button button--ghost" href="/learn">{copy.learn}</a>
+      </div>
+
+      <section class="card panel panel--mint section--tight">
+        <h2>{lang === 'sw' ? 'Dharura ya macho?' : 'Eye emergency?'}</h2>
+        <p>
+          {lang === 'sw'
+            ? 'Ikiwa una maumivu makali, kuona ghafla kumepungua, au jeraha la jicho, tafuta huduma ya dharura mara moja.'
+            : 'If you have severe pain, sudden vision loss, or an eye injury, seek emergency care immediately.'}
+        </p>
+        <a class="button button--secondary" href="/warning-signs">
+          {lang === 'sw' ? 'Angalia ishara za hatari' : 'See warning signs'}
+        </a>
+      </section>
+    </div>
+  </div>
+</BaseLayout>

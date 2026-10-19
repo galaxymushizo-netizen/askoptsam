@@ -1,0 +1,45 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AuthForm from '../components/AuthForm';
+import { t } from '../i18n/ui';
+import { isSupabaseConfigured } from '../lib/supabase/server';
+
+export const prerender = false;
+
+const lang = Astro.locals.lang;
+if (Astro.locals.user) return Astro.redirect('/account');
+
+const error = Astro.url.searchParams.get('error');
+const next = Astro.url.searchParams.get('next') || '/account';
+const accountsConfigured = isSupabaseConfigured();
+---
+
+<BaseLayout
+  title={`${t(lang, 'auth.signUpTitle')} — AskOptsam`}
+  description={t(lang, 'auth.signUpSub')}
+  lang={lang}
+  noindex
+  mainClass="page"
+>
+  <div class="container auth-shell">
+    <aside class="auth-aside">
+      <p class="eyebrow">AskOptsam</p>
+      <h2>{t(lang, 'auth.reasonTitle')}</h2>
+      <ul class="limit-list">
+        <li>{t(lang, 'auth.reason1')}</li>
+        <li>{t(lang, 'auth.reason2')}</li>
+        <li>{t(lang, 'auth.reason3')}</li>
+      </ul>
+      <p class="small muted">{t(lang, 'chat.tempNotice')}</p>
+      <a class="button button--ghost" href="/chat">{t(lang, 'auth.continueWithout')} →</a>
+    </aside>
+
+    <AuthForm
+      lang={lang}
+      mode="signup"
+      accountsConfigured={accountsConfigured}
+      error={error}
+      next={next}
+    />
+  </div>
+</BaseLayout>
